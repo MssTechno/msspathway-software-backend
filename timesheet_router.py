@@ -289,7 +289,7 @@ def get_leave_requests(
 ):
 
     # If current user is admin → get all leave requests
-    if current_user.role == "admin":
+    if current_user["role"] == "admin":
         leaves = db.query(Leave).all()
 
     # Else → get leave requests of employees reporting to current user
@@ -325,7 +325,7 @@ def update_leave_status(
     current_user: User = Depends(get_current_user)
 ):
 
-    if current_user.role != "admin":
+    if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Only admin can update leave status")
 
     leave = db.query(Leave).filter(Leave.id == leave_id).first()
@@ -348,3 +348,4 @@ def update_leave_status(
         "leave_id": leave.id,
         "status": leave.status
     }
+
