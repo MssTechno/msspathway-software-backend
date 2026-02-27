@@ -116,62 +116,71 @@ def get_month_data(
     from datetime import datetime, timedelta, date
     import calendar
 
-    # ✅ Get first and last date of month
     start = date(year, month, 1)
     last_day = calendar.monthrange(year, month)[1]
     end = date(year, month, last_day)
 
-    # Fetch all timesheets in selected month
+    # ✅ Fetch timesheets once
     timesheets = db.query(Timesheet).filter(
-        Timesheet.user_id == current_user.id,
+        Timesheet.user_id == current_user["id"],
         Timesheet.submitted_date >= start,
         Timesheet.submitted_date <= end
     ).all()
 
     timesheet_map = {t.submitted_date: t for t in timesheets}
 
+    # ✅ Fetch approved leaves once
+    leaves = db.query(Leave).filter(
+        Leave.user_id == current_user["id"],
+        Leave.status == "approved",
+        Leave.start_date <= end,
+        Leave.end_date >= start
+    ).all()
+
+    # Create leave date set
+    leave_dates = set()
+    for leave in leaves:
+        current_leave = leave.start_date
+        while current_leave <= leave.end_date:
+            leave_dates.add(current_leave)
+            current_leave += timedelta(days=1)
+
+    # ✅ Fetch calendar once
+    calendar_days = db.query(Calendar).filter(
+        Calendar.date >= start,
+        Calendar.date <= end
+    ).all()
+
+    calendar_map = {c.date: c.status for c in calendar_days}
+
     response = {
         "date": {},
         "weekly_hours": 0
     }
 
-    # ✅ Current week Monday–Friday calculation (same logic)
     today = datetime.today().date()
-    week_start = today - timedelta(days=today.weekday())  # Monday
-    week_end = week_start + timedelta(days=4)             # Friday
+    week_start = today - timedelta(days=today.weekday())
+    week_end = week_start + timedelta(days=4)
 
     current_week_total = 0
     current = start
 
     while current <= end:
 
-        # 🔹 Check if approved leave exists
-        approved_leave = db.query(Leave).filter(
-            Leave.user_id == current_user.id,
-            Leave.status == "approved",
-            Leave.start_date <= current,
-            Leave.end_date >= current
-        ).first()
-
-        # 🔹 Get calendar status
-        calendar_day = db.query(Calendar).filter(
-            Calendar.date == current
-        ).first()
-
-        if approved_leave:
+        # 🔹 Leave check (NO DB call now)
+        if current in leave_dates:
             status = "leave"
         else:
-            status = calendar_day.status if calendar_day else "normal"
+            status = calendar_map.get(current, "normal")
 
-        # 🔹 If timesheet exists
         if current in timesheet_map:
             ts = timesheet_map[current]
             daily_hours = round(ts.total_hours, 2)
 
             activities = [
                 {
-                    "project_name": a.get("project_name"),
-                    "task_category": a.get("task_category"),
+                    "project_name": a.get("project_name") or "",
+                    "task_category": a.get("task_name") or "",
                     "start_time": a.get("start_time"),
                     "end_time": a.get("end_time"),
                     "hours": round(float(a.get("hours", 0)), 2)
@@ -182,7 +191,6 @@ def get_month_data(
             daily_hours = 0
             activities = []
 
-        # ✅ Count only current week Monday–Friday (same as your logic)
         if week_start <= current <= week_end:
             current_week_total += daily_hours
 
@@ -197,4 +205,6 @@ def get_month_data(
     response["weekly_hours"] = round(current_week_total, 2)
 
     return response
+
+
 
