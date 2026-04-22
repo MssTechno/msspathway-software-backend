@@ -36,6 +36,7 @@ def get_current_user(
 
         return {
             "id": user.id,
+            "employee_id": user.employee_id,
             "email": user.email,
             "role": user.role
         }

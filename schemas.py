@@ -1,6 +1,15 @@
-from pydantic import BaseModel, EmailStr, Field 
+from enum import Enum
+from pydantic import BaseModel, EmailStr, Field, HttpUrl
 from typing import Optional
-from enums import ClientStatus
+from pydantic import BaseModel, HttpUrl
+from datetime import date
+from typing import Optional
+
+class ClientStatus(str, Enum):
+    active = "A"
+    terminated = "T"
+    pass_status = "P"
+    completed = "C"
 
 class LoginRequest(BaseModel):
     email: EmailStr
@@ -13,6 +22,7 @@ class TokenResponse(BaseModel):
     role: str
 
 class UserCreate(BaseModel):
+    #employee_id: str
     first_name: str | None = None
     last_name: str | None = None
     mobile: str | None = None
@@ -20,18 +30,22 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str
     role: str = "user"
-    reporting_to : int | None = None
-    HR : int | None = None
+    reporting_to: Optional[str] = None
+    HR: Optional[str] = None
 
 class UserLimitedUpdate(BaseModel):
+    email: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
     mobile: Optional[str] = None
     designation: Optional[str] = None
     role: Optional[str] = None
-    reporting_to: Optional[int] = None
-    HR: Optional[int] = None
+    reporting_to: Optional[str] = None
+    HR: Optional[str] = None
+    password: Optional[str] = None
 
 class UserResponse(BaseModel):
-    id: int
+    employee_id: Optional[str] = None
     first_name: str | None = None
     last_name: str | None = None
     mobile: str | None = None
@@ -47,7 +61,7 @@ class ClientCreate(BaseModel):
     mobile: str
     technology: str
     status: ClientStatus
-    assigned_user_id: int
+    employee_id: str
 
 class ClientResponse(BaseModel):
     id: int
@@ -59,5 +73,104 @@ class ClientResponse(BaseModel):
     class Config:
         from_attributes = True
 
-class ClientStatusUpdate(BaseModel):
-    status: ClientStatus
+class ClientUpdate(BaseModel):
+    client_name: Optional[str] = None
+    mobile: Optional[str] = None
+    technology: Optional[str] = None
+    status: Optional[str] = None
+    employee_id: Optional[str] = None
+
+    
+class PlatformEnum(str, Enum):
+    naukri = "Naukri"
+    linkedin = "LinkedIn"
+    career_pages = "Career Pages"
+    cold_emails = "Cold Emails"
+    other = "Other"
+
+
+class ApplicationCreate(BaseModel):
+    platform: PlatformEnum
+    company_name: str
+    role: str
+    date_applied: date
+    application_link: Optional[HttpUrl] = None
+    notes: Optional[str] = None
+
+class ApplicationUpdate(BaseModel):
+    platform: Optional[str] = None
+    company_name: Optional[str] = None
+    role: Optional[str] = None
+    date_applied: Optional[date] = None
+    application_link: Optional[str] = None
+    notes: Optional[str] = None
+
+class CredentialCreate(BaseModel):
+
+    portal_name:str
+    portal_link:str
+    username:str
+    password:str
+    notes:str
+
+class CredentialUpdate(BaseModel):
+
+    portal_name:str | None=None
+    portal_link:str | None=None
+    username:str | None=None
+    password:str | None=None
+    notes:str | None=None
+
+class ReportCreate(BaseModel):
+    company_name:str
+    recruiter_name:str
+    recruiter_contact:int
+    recruiter_email:str
+    type:str
+    status:Optional[str]=None
+    date:str
+    notes:str | None = None
+
+class ReportUpdate(BaseModel):
+    company_name: Optional[str]
+    recruiter_name: Optional[str]
+    recruiter_contact: Optional[int]
+    recruiter_email: Optional[str]
+    type: Optional[str]
+    status: Optional[str]
+    date: Optional[date]
+    notes: Optional[str]
+#-------------------------------calander schemas apis-------------------
+
+from datetime import date
+from typing import List
+from models import DayStatus
+
+
+class CalendarResponse(BaseModel):
+    id: int
+    date: date
+    status: DayStatus
+
+    class Config:
+        from_attributes = True
+
+
+class CalendarUpdate(BaseModel):
+    status: DayStatus
+
+
+from typing import Optional
+from datetime import date
+from pydantic import BaseModel
+from models import DayStatus
+
+
+class CalendarWithHoursResponse(BaseModel):
+    id: int
+    date: date
+    status: DayStatus
+    total_hours: float = 0
+
+    class Config:
+        from_attributes = True
