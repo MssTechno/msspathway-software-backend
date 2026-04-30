@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+sqlalchemy
+psycopg2-binary
+python-multipart
+passlib[bcrypt]
+bcrypt==4.0.1
+python-jose[cryptography]
+pydantic[email]
+email-validator
+google-cloud-storage
+apscheduler
